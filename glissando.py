@@ -1,14 +1,13 @@
-from pedalboard import load_plugin, Compressor, Gain, Pedalboard, Chorus, Distortion, Reverb, PitchShift, Delay, Mix, Limiter, Plugin
+#########
+## Imports ##
+#########
+from pedalboard import load_plugin,Plugin, Limiter
 from pedalboard.io import AudioFile
-import numpy as np
-import openai
-import re
-import os
 import streamlit as st
 import fx
 
 ranger = iter(range(1, 31))
-samples = {"A": "B Minor 120bpm (Melody 17).wav", "B": "C Major 80bpm (Melody 23).wav"}
+samples = {"A": "/samples/B Minor 120bpm (Melody 17).wav", "B": "/samples/C Major 80bpm (Melody 23).wav"}
 
 #########
 ## Streamlit App Begins ##

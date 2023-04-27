@@ -1,6 +1,5 @@
 from pedalboard import load_plugin, Pedalboard, Limiter, Plugin
 from pedalboard.io import AudioFile
-import numpy as np
 import openai
 import re
 import os
@@ -54,19 +53,21 @@ def write_output(input_audio, f_name, p_board, samplerate = 44100):
 vst_plugin_path = "/Library/Audio/Plug-Ins/Components/Archetype Cory Wong.component"
 
 def jazz(arch_instance, x = 0.5):
+    """
+    A clean jazz tone generator with an '80s chorus effect.
+    """
     arch_instance.amp_type = "The Clean Machine"
     arch_instance.the_80s_active = "Active"
+    arch_instance.the_80s_mix = 1.0 * x
     arch_instance.the_fourth_position_active = "Inactive"
-    arch_instance.the_clean_machine_treble = 0.2
+    arch_instance.the_clean_machine_treble = 0.2 
     arch_instance.the_clean_machine_bass = 0.4
     return arch_instance
     
-def reverb(arch_instance):
-    arch_instance.the_wash_mode = "Reverb"
-    arch_instance.the_wash_dry_wet = 0.2
-    return arch_instance
-    
 def overdrive(arch_instance, x = 0.5):
+    """
+    A drive-focused tone generator with compression and a hazy amp.
+    """
     arch_instance.amp_type = "The Amp Snob"
     arch_instance.the_fourth_position_active = "Active"
     arch_instance.the_fourth_position_compression = 0.6
@@ -75,6 +76,9 @@ def overdrive(arch_instance, x = 0.5):
     return arch_instance
 
 def tube_drive(arch_instance, x = 0.5):
+    """
+    A tube-screamer and overdrive stack generator with compression.
+    """
     arch_instance.amp_type = "The Amp Snob"
     arch_instance.the_fourth_position_active = "Active"
     arch_instance.the_fourth_position_compression = 0.4
@@ -84,15 +88,40 @@ def tube_drive(arch_instance, x = 0.5):
     arch_instance.the_tuber_drive = max(0.8 * x, 0.8)
     return arch_instance
 
+def reverb(arch_instance):
+    """
+    Function that applies reverb to the signal chain.
+    """
+    arch_instance.the_wash_mode = "Reverb"
+    arch_instance.the_wash_dry_wet = 0.2
+    return arch_instance
 
 #########
 ## OOP Implementation of Generated Pedal ##
 #########
 
-system_prompt = "I am a user entering text prompts related to guitar tones. Respond in exactly this format: 'FX: ..., Val: ...%, Reverb: [T/F]', where FX is one from [Jazz Chorus, Overdrive, Tube Screamer], Val is ."
+system_prompt = "I am a user entering text prompts related to guitar tones. Respond in exactly this format: 'FX: ..., Val: ...%, Reverb: [T/F]', where FX is one from [Jazz Chorus, Overdrive, Tube Screamer], Val is a percentage to apply, Reverb is [T/F]. Never provide context or say anythinhg else."
 fx_match = {"Jazz Chorus": jazz, "Overdrive": overdrive, "Tube Screamer": tube_drive}
 
 class BoardGenerator:
+    """
+    Python class that encapsulates the 'generation' of new
+    effects based on the user's query; new objects created
+    by this class contain a Pedalboard attribute that can be
+    accessed using object.board.
+
+    Attributes:
+    self.arch (Plugin): A Plugin() object that initiates the VST (application that does the sound processing)
+    self.input_text (str): The user's query, passed in through Streamlit
+    self.weights (dict): A dictionary that parses GPT's response to the user and extracts values from it
+    self.board (Pedalboard): A Pedalboard() that stores self.arch and enables audio interfacing.
+    self.gpt_response (str): Raw text returned by the OpenAI API
+
+    Methods:
+    get_weights (dict): Calls the OpenAI API and the helper function extract_values to get self.weights
+    extract_values (dict): Helper function for parsing and extracting features from GPT.
+    make_board (Pedalboard): Calls the 'pedalboard management' methods.
+    """
     def __init__(self, input_text):
         self.arch = load_plugin(vst_plugin_path)
         self.input_text = input_text
